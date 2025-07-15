@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Binance Real-Time Data on TradingView Chart</title>
+    <script src="./charting_library/charting_library.standalone.js"></script>
+    <style>
+        #chart-container {
+            width: 100%;
+            height: 600px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="chart-container"></div>
+
+<script>
+    class Datafeed {
+        constructor() {
+            this.aggregatedBar = null;
+            this.aggregationInterval = 1000; // 1 second in milliseconds
+            this.intervalStart = null;
+        }
+
+        onReady(callback) {
+            setTimeout(() => callback({
+                exchanges: [{ value: "BINANCE", name: "Binance", desc: "Binance Exchange" }],
+                symbolsTypes: [{ name: "crypto", value: "crypto" }],
+                supported_resolutions: ["1", "5", "15", "30", "60", "240", "1D"]
+            }), 0);
+        }
+
+        resolveSymbol(symbolName, onSymbolResolvedCallback, onResolveErrorCallback) {
+            const symbolStub = {
+                name: symbolName,
+                ticker: symbolName,
+                type: 'crypto',
+                session: '24x7',
+                timezone: 'Etc/UTC',
+                exchange: 'Binance',
+                minmov: 1,
+                pricescale: 100,
+                has_intraday: true,
+                intraday_multipliers: ['1', '5', '15', '30', '60'],
+                supported_resolutions: ["1", "5", "15", "30", "60", "240", "1D"],
+                volume_precision: 8,
+                data_status: 'streaming'
+            };
+            setTimeout(() => onSymbolResolvedCallback(symbolStub), 0);
+        }
+
+        getBars(symbolInfo, resolution, { from, to }, onHistoryCallback, onErrorCallback, firstDataRequest) {
+            const binanceSymbol = symbolInfo.ticker.replace("BINANCE:", "");
+            const interval = this.convertResolution(resolution);
+
+            const BinanceUrl = `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol}&interval=${interval}&startTime=${from * 1000}&endTime=${to * 1000}`;
+            fetch(`http://localhost:5000/proxy?url=${encodeURIComponent(BinanceUrl)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const bars = data.map(el => ({
+                        time: el[0],
+                        low: parseFloat(el[3]),
+                        high: parseFloat(el[2]),
+                        open: parseFloat(el[1]),
+                        close: parseFloat(el[4]),
+                        volume: parseFloat(el[5]),
+                    }));
+                    onHistoryCallback(bars, { noData: bars.length === 0 });
+                })
+                .catch(err => onErrorCallback(err));
+        }
+
+        subscribeBars(symbolInfo, resolution, onRealtimeCallback, subscriberUID, onResetCacheNeededCallback) {
+            const binanceSymbol = symbolInfo.ticker.replace("BINANCE:", "").toLowerCase();
+
+            // Set up WebSocket connection
+            this.binanceSocket = new WebSocket(`wss://stream.binance.com:9443/ws/${binanceSymbol}@trade`);
+
+            this.binanceSocket.onmessage = event => {
+                const data = JSON.parse(event.data);
+                console.log("WebSocket message:", data); // Debug message
+
+                // Handle aggregation logic
+                const currentPrice = parseFloat(data.p);
+                const currentTime = Math.floor(data.T / this.aggregationInterval) * this.aggregationInterval;
+
+                // Initialize a new bar if no aggregation has started or the interval is complete
+                if (!this.aggregatedBar || currentTime !== this.intervalStart) {
+                    if (this.aggregatedBar) {
+                        onRealtimeCallback(this.aggregatedBar); // Send completed bar
+                    }
+                    // Start a new bar
+                    this.intervalStart = currentTime;
+                    this.aggregatedBar = {
+                        time: currentTime,
+                        open: currentPrice,
+                        high: currentPrice,
+                        low: currentPrice,
+                        close: currentPrice,
+                        volume: 0
+                    };
+                } else {
+                    // Update the existing bar's high, low, close, and volume
+                    this.aggregatedBar.close = currentPrice;
+                    this.aggregatedBar.high = Math.max(this.aggregatedBar.high, currentPrice);
+                    this.aggregatedBar.low = Math.min(this.aggregatedBar.low, currentPrice);
+                    this.aggregatedBar.volume += parseFloat(data.q); // Aggregate volume
+                }
+            };
+
+            this.binanceSocket.onerror = error => {
+                console.error("WebSocket error:", error);
+            };
+
+            this.binanceSocket.onclose = () => {
+                console.log("WebSocket connection closed. Attempting to reconnect...");
+                setTimeout(() => this.subscribeBars(symbolInfo, resolution, onRealtimeCallback, subscriberUID, onResetCacheNeededCallback), 1000); // Reconnect if closed
+            };
+        }
+
+        unsubscribeBars(subscriberUID) {
+            if (this.binanceSocket) {
+                this.binanceSocket.close();
+            }
+        }
+
+        convertResolution(resolution) {
+            switch (resolution) {
+                case '1': return '1m';
+                case '5': return '5m';
+                case '15': return '15m';
+                case '30': return '30m';
+                case '60': return '1h';
+                case '240': return '4h';
+                case '1D': return '1d';
+                default: return '1m';
+            }
+        }
+    }
+
+    const widget = new TradingView.widget({
+        symbol: 'BINANCE:BTCUSDT',
+        interval: '1',
+        container: document.getElementById('chart-container'),
+        datafeed: new Datafeed(),
+        library_path: './charting_library/',
+        locale: 'en',
+        timezone: "Asia/Kolkata",
+        disabled_features: ["use_localstorage_for_settings"],
+        enabled_features: ["study_templates"],
+        theme: "Dark",
+    });
+</script>
+
+</body>
+</html>
