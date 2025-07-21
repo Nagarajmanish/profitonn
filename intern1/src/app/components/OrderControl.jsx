@@ -24,15 +24,15 @@ const OrderControl = ({
   unitLabel = "USD",
   icon,
 }) => (
-  <div className="flex flex-col items-center w-full h-auto mt-1">
-    <div className="flex items-center w-full h-[50px]">
+  <div className="w-full flex flex-col items-start bg-zinc-950 border-b border-slate-800 py-1 px-2">
+    <div className="flex items-center w-full h-10">
       <ToogleButton onToggle={onToggle} isActive={isActive} value={value} />
-      <span className="ml-4 text-sm text-white">{label}</span>
+      <span className="ml-3 text-sm text-white font-normal">{label}</span>
       {icon && <span className="ml-2">{icon}</span>}
     </div>
     {isActive && (
-      <div className="dropdown-content bg-zinc-950 text-white rounded w-full -mb-4 -mt-1">
-        <div className="flex border-2 border-slate-600 rounded w-full h-[32px]">
+      <div className="dropdown-content bg-zinc-950 text-white rounded w-full -mb-2 -mt-1">
+        <div className="flex border border-slate-600 rounded w-full h-[32px]">
           <div className="w-[60%] h-full text-sm flex items-center justify-between">
             <input
               className="ml-1 bg-zinc-950 w-20 border-none outline-none"
@@ -47,13 +47,13 @@ const OrderControl = ({
           </div>
           <button
             onClick={onDecrease}
-            className="w-[20%] h-full border-l-2 border-slate-600 text-xl flex items-center justify-center hover:bg-gray-800"
+            className="w-[20%] h-full border-l border-slate-600 text-xl flex items-center justify-center hover:bg-gray-800"
           >
             -
           </button>
           <button
             onClick={onIncrease}
-            className="w-[20%] h-full border-l-2 border-slate-600 text-xl flex items-center justify-center hover:bg-gray-800"
+            className="w-[20%] h-full border-l border-slate-600 text-xl flex items-center justify-center hover:bg-gray-800"
           >
             +
           </button>

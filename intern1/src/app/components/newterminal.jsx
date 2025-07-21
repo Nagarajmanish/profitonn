@@ -1463,6 +1463,29 @@ export default function Terminal({ onClickRotate, isFullScreen, isRotateOnly }) 
               <div className={`${isFullScreen ? "w-[80vw] border-b-4 border-slate-600" : "w-[100vw] lg:[80vw]"}`}>
                 <TradingViewChart />
               </div>
+              {/* Tabs for Open, Pending, Closed (fullscreen mobile) */}
+              {isFullScreen && (
+                <div className="w-full flex justify-between bg-zinc-900 text-white rounded-t-md mt-2">
+                  <button
+                    className={`flex-1 py-2 ${activeButton === 1 ? "bg-zinc-800 font-bold" : ""}`}
+                    onClick={() => setActiveButton(1)}
+                  >
+                    Open ({openTrades.length})
+                  </button>
+                  <button
+                    className={`flex-1 py-2 ${activeButton === 2 ? "bg-zinc-800 font-bold" : ""}`}
+                    onClick={() => setActiveButton(2)}
+                  >
+                    Pending ({pendingTrades.length})
+                  </button>
+                  <button
+                    className={`flex-1 py-2 ${activeButton === 3 ? "bg-zinc-800 font-bold" : ""}`}
+                    onClick={() => setActiveButton(3)}
+                  >
+                    Closed ({closedTrades.length})
+                  </button>
+                </div>
+              )}
               {/* Trade Table (mobile, fullscreen) */}
               {isFullScreen && (
                 <TradeTable
@@ -1481,6 +1504,29 @@ export default function Terminal({ onClickRotate, isFullScreen, isRotateOnly }) 
           {!isFullScreen && (
             <div className="h-1 cursor-ns-resize bg-slate-600" onMouseDown={handleMouseDown} style={{ cursor: "ns-resize" }}></div>
           )}
+          {/* Tabs for Open, Pending, Closed (desktop, below chart) */}
+          {!isFullScreen && (
+            <div className="w-full flex justify-between bg-zinc-900 text-white rounded-t-md mt-2">
+              <button
+                className={`flex-1 py-2 ${activeButton === 1 ? "bg-zinc-800 font-bold" : ""}`}
+                onClick={() => setActiveButton(1)}
+              >
+                Open ({openTrades.length})
+              </button>
+              <button
+                className={`flex-1 py-2 ${activeButton === 2 ? "bg-zinc-800 font-bold" : ""}`}
+                onClick={() => setActiveButton(2)}
+              >
+                Pending ({pendingTrades.length})
+              </button>
+              <button
+                className={`flex-1 py-2 ${activeButton === 3 ? "bg-zinc-800 font-bold" : ""}`}
+                onClick={() => setActiveButton(3)}
+              >
+                Closed ({closedTrades.length})
+              </button>
+            </div>
+          )}
           {/* Trade Table (desktop, below chart) */}
           {!isFullScreen && (
             <TradeTable
@@ -1496,87 +1542,95 @@ export default function Terminal({ onClickRotate, isFullScreen, isRotateOnly }) 
         </div>
 
         {/* Right Sidebar: Buy/Sell Controls and Order Controls */}
-        <div className="items-center hidden lg:flex border-l-4 border-slate-600 border-box flex-col lg:w-[20vw] w-[100vw] lg:h-[92vh] bg-zinc-950 ">
-          <div className="absolute top-15 ">
-            <p className={`text-slate-300 p-2 lg:block hidden text-base ${symbol ? "" : "invisible"} ${isGameOver === true ? "opacity-50" : ""}`}>{symbol ? symbol.toUpperCase() : "Placeholder"}</p>
+        <div className="items-center hidden lg:flex border-l-4 border-slate-600 border-box flex-col lg:w-[20vw] w-[100vw] lg:h-[92vh] bg-zinc-950">
+          {/* Symbol text moved above BuySellControls */}
+          <div className="w-full px-4 py-2 bg-zinc-900">
+            <p className="text-white text-xl font-semibold">{symbol ? symbol.toUpperCase() : "BTCUSDT"}</p>
           </div>
+
           {/* Buy/Sell Controls */}
-          <BuySellControls
-            selectButton={selectButton}
-            onSelect={handleSelectClick}
-            units={units}
-            inputValue={inputValue}
-            onInputChange={handleInputChange}
-            onBlur={handleBlur}
-            onIncrease={handleIncrease}
-            onDecrease={handleDecrease}
-            askPrice={latestTradeData ? latestTradeData.askPrice : ""}
-            bidPrice={latestTradeData ? latestTradeData.bidPrice : ""}
-            disabled={isGameOver}
-          />
+          <div className="w-full px-4">
+            <BuySellControls
+              selectButton={selectButton}
+              onSelect={handleSelectClick}
+              units={units}
+              inputValue={inputValue}
+              onInputChange={handleInputChange}
+              onBlur={handleBlur}
+              onIncrease={handleIncrease}
+              onDecrease={handleDecrease}
+              askPrice={latestTradeData ? latestTradeData.askPrice : ""}
+              bidPrice={latestTradeData ? latestTradeData.bidPrice : ""}
+              disabled={isGameOver}
+            />
+          </div>
+
           {/* Order Controls */}
-          <OrderControl
-            label="Pending"
-            isActive={pendingActive}
-            value={pendingValue}
-            onToggle={handlePendingToggle}
-            onChange={e => setPendingValue(Number(e.target.value))}
-            onIncrease={increasePendingValue}
-            onDecrease={decreasePendingValue}
-            unitLabel="USD"
-            icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM169.8 165.3c7.9-22.3 29.1-37.3 52.8-37.3l58.3 0c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24l0-13.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1l-58.3 0c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" /></svg>}
-          />
-          <OrderControl
-            label="Take Profit"
-            isActive={takeProfitActive}
-            value={takeProfitValue}
-            onToggle={handleTakeProfitToggle}
-            onChange={e => setTakeProfitValue(e.target.value)}
-            onIncrease={increasetakeProfit}
-            onDecrease={decreasetakeProfit}
-            unitLabel="USD"
-          />
-          <OrderControl
-            label="Stop Loss"
-            isActive={stopLossActive}
-            value={stopLossValue}
-            onToggle={handleStopLossToggle}
-            onChange={e => setStopLossValue(e.target.value)}
-            onIncrease={increaseStopLoss}
-            onDecrease={decreaseStopLoss}
-            unitLabel="USD"
-          />
+          <div className="w-full px-4 mt-2">
+            <OrderControl
+              label="Pending"
+              isActive={pendingActive}
+              value={pendingValue}
+              onToggle={handlePendingToggle}
+              onChange={e => setPendingValue(Number(e.target.value))}
+              onIncrease={increasePendingValue}
+              onDecrease={decreasePendingValue}
+              unitLabel="USD"
+              icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-4 h-4 fill-current"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM169.8 165.3c7.9-22.3 29.1-37.3 52.8-37.3l58.3 0c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24l0-13.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1l-58.3 0c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2z" /></svg>}
+            />
+            <OrderControl
+              label="Take Profit"
+              isActive={takeProfitActive}
+              value={takeProfitValue}
+              onToggle={handleTakeProfitToggle}
+              onChange={e => setTakeProfitValue(e.target.value)}
+              onIncrease={increasetakeProfit}
+              onDecrease={decreasetakeProfit}
+              unitLabel="USD"
+            />
+            <OrderControl
+              label="Stop Loss"
+              isActive={stopLossActive}
+              value={stopLossValue}
+              onToggle={handleStopLossToggle}
+              onChange={e => setStopLossValue(e.target.value)}
+              onIncrease={increaseStopLoss}
+              onDecrease={decreaseStopLoss}
+              unitLabel="USD"
+            />
+          </div>
+
           {/* Place Trade Button */}
-          <button
-            className={`flex items-center justify-center mt-8 w-[90%] rounded h-[60px] text-slate-900 ${units === 0 || selectButton === null ? "bg-slate-500 cursor-not-allowed" : selectButton === "sell" ? "bg-red-500 text-white hover:bg-red-600" : selectButton === "buy" ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-slate-500"}`}
-            disabled={units === 0 || selectButton === null}
-            onClick={placeTradeFunction}
-          >
-            <span className="text-base">{units === 0 || selectButton === null ? "Select Buy/Sell" : selectButton === "sell" ? `Sell ${units} units` : selectButton === "buy" ? `Buy ${units} units` : "Select Buy/Sell"}</span>
-          </button>
-          {selectButton && units > 0 && (
+          <div className="w-full px-4 mt-4">
             <button
-              onClick={() => setSelectButton(null)}
-              className={`text-white w-[90%] mt-2 rounded p-2 ${selectButton === "sell" ? "border-2 border-red-400 hover:bg-zinc-800" : selectButton === "buy" ? "border-2 border-blue-500 hover:bg-zinc-800" : null}`}
+              className={`w-full py-3 rounded-md text-center ${
+                units === 0 || selectButton === null 
+                  ? "bg-gray-600 text-gray-300" 
+                  : "bg-gray-700 text-white hover:bg-gray-600"
+              }`}
+              disabled={units === 0 || selectButton === null}
+              onClick={placeTradeFunction}
             >
-              Cancel
+              {units === 0 || selectButton === null ? "Select Buy/Sell" : `${selectButton === "sell" ? "Sell" : "Buy"} ${units} units`}
             </button>
-          )}
-          {/* Fees, Leverage, Margin */}
-          <div className="mt-4 w-[90%] text-white">
-            <div className="flex justify-between items-center w-[90%]">
-              <span className="mb-2">Fees: </span>
+          </div>
+
+          {/* Trading Info */}
+          <div className="w-full px-4 mt-6 text-white space-y-2">
+            <div className="flex justify-between">
+              <span>Fees:</span>
               <span>$ 0.25 per trade</span>
             </div>
-            <div className="flex justify-between items-center w-[90%]">
-              <span className="mb-2">Leverage: </span>
+            <div className="flex justify-between">
+              <span>Leverage:</span>
               <span>{leverageValue}</span>
             </div>
-            <div className="flex justify-between items-center w-[90%]">
-              <span className="mb-2">Margin: </span>
+            <div className="flex justify-between">
+              <span>Margin:</span>
               <span>$ {totalMargin}</span>
             </div>
           </div>
+
           {/* Alert Popup */}
           <AlertPopup show={showAlert} message={alertMessage} positionClass="absolute bottom-0 lg:right-0 lg:bottom-2" />
         </div>
